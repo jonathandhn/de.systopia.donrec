@@ -8,14 +8,14 @@
 | License: AGPLv3, see LICENSE file                      |
 +--------------------------------------------------------*/
 
-class CRM_Donrec_Logic_WatermarkPreset_SvgAcrossLarge extends CRM_Donrec_Logic_WatermarkPreset {
+class CRM_Donrec_Logic_WatermarkPreset_SvgHolohedral extends CRM_Donrec_Logic_WatermarkPreset {
 
   public static function getName() {
-    return 'svg_across_large';
+    return 'svg_holohedral';
   }
 
   public static function getLabel() {
-    return ts('SVG across large', array('domain' => 'de.systopia.donrec'));
+    return ts('SVG holohedral', array('domain' => 'de.systopia.donrec'));
   }
 
   public function injectMarkup(&$html, $pdf_format) {
@@ -30,23 +30,22 @@ class CRM_Donrec_Logic_WatermarkPreset_SvgAcrossLarge extends CRM_Donrec_Logic_W
     $paper_height = CRM_Utils_PDF_Utils::convertMetric($paper_size['height'], $paper_size['metric'], $pdf_format['metric']);
     $paper_height -= $pdf_format['margin_top'];
     $paper_height -= $pdf_format['margin_bottom'];
+    // TODO: Adjust SVG
     $watermark_css = '<style>
                         {if $watermark}
                           {literal}
                           body {
                             background: url("data:image/svg+xml;utf8,\
-                            <svg xmlns=\'http://www.w3.org/2000/svg\' version=\'1.1\' height=\'' . $paper_height . $pdf_format['metric'] . '\' width=\'' . $paper_width . $pdf_format['metric'] . '\'>\
+                            <svg xmlns=\'http://www.w3.org/2000/svg\' version=\'1.1\' height=\'50pt\' width=\'' . $paper_width . $pdf_format['metric'] . '\'>\
                               <text \
-                                x=\'33%\'\
-                                y=\'66%\'\
-                                dx=\'-50%\'\
-                                text-anchor=\'middle\'\
+                                x=\'20\'\
+                                y=\'40\'\
+                                text-anchor=\'start\'\
                                 fill=\'#808080\'\
                                 fill-opacity=\'0.2\'\
-                                font-size=\'100pt\'\
+                                font-size=\'20pt\'\
                                 font-family=\'Arial\'\
-                                transform=\'rotate(-45)\'\
-                              >{/literal}{$watermark}{literal}</text>\
+                              >{/literal}{section name=foo start=0 loop=10 step=1}{$watermark} {/section}{literal}</text>\
                             </svg>");
                             background-repeat: repeat;
                             width: ' . $paper_width . $pdf_format['metric'] . ';
@@ -54,7 +53,7 @@ class CRM_Donrec_Logic_WatermarkPreset_SvgAcrossLarge extends CRM_Donrec_Logic_W
                           }
                           {/literal}
                         {/if}
-                      </style>
+                        </style>
                         ';
 
     $matches = array();

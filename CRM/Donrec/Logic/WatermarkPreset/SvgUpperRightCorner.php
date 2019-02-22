@@ -18,30 +18,41 @@ class CRM_Donrec_Logic_WatermarkPreset_SvgUpperRightCorner extends CRM_Donrec_Lo
     return ts('SVG upper right corner', array('domain' => 'de.systopia.donrec'));
   }
 
-  public function injectMarkup(&$html) {
+  public function injectMarkup(&$html, $pdf_format) {
     return TRUE;
   }
 
-  public function injectStyles(&$html) {
+  public function injectStyles(&$html, $pdf_format) {
+    $paper_size = CRM_Core_BAO_PaperSize::getByName($pdf_format['paper_size']);
+    $paper_width = CRM_Utils_PDF_Utils::convertMetric($paper_size['width'], $paper_size['metric'], $pdf_format['metric']);
+    $paper_width -= $pdf_format['margin_left'];
+    $paper_width -= $pdf_format['margin_right'];
+    $paper_height = CRM_Utils_PDF_Utils::convertMetric($paper_size['height'], $paper_size['metric'], $pdf_format['metric']);
+    $paper_height -= $pdf_format['margin_top'];
+    $paper_height -= $pdf_format['margin_bottom'];
     // TODO: Adjust SVG
     $watermark_css = '<style>
-                        {literal}
-                        body {
-                          background: url("data:image/svg+xml;utf8,\
-                          <svg xmlns=\'http://www.w3.org/2000/svg\' version=\'1.1\' height=\'29.7cm\' width=\'21cm\'>\
-                            <text \
-                              x=\'95%\'\
-                              y=\'5%\'\
-                              text-anchor=\'end\'\
-                              fill=\'#808080\'\
-                              fill-opacity=\'0.2\'\
-                              font-size=\'20pt\'\
-                              font-family=\'Arial\'\
-                            >{/literal}{if $watermark}{$watermark}{/if}{literal}</text>\
-                          </svg>");
-                          background-repeat: repeat;
-                        }
-                        {/literal}
+                        {if $watermark}
+                          {literal}
+                          body {
+                            background: url("data:image/svg+xml;utf8,\
+                            <svg xmlns=\'http://www.w3.org/2000/svg\' version=\'1.1\' height=\'' . $paper_height . $pdf_format['metric'] . '\' width=\'' . $paper_width . $pdf_format['metric'] . '\'>\
+                              <text \
+                                x=\'95%\'\
+                                y=\'5%\'\
+                                text-anchor=\'end\'\
+                                fill=\'#808080\'\
+                                fill-opacity=\'0.2\'\
+                                font-size=\'20pt\'\
+                                font-family=\'Arial\'\
+                              >{/literal}{$watermark}{literal}</text>\
+                            </svg>");
+                            background-repeat: repeat;
+                            width: ' . $paper_width . $pdf_format['metric'] . ';
+                            height: ' . $paper_height . $pdf_format['metric'] . ';
+                          }
+                          {/literal}
+                        {/if}
                         </style>
                         ';
 
