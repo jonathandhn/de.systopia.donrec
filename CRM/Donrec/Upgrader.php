@@ -35,7 +35,7 @@ class CRM_Donrec_Upgrader extends CRM_Donrec_Upgrader_Base {
    */
   public function enable() {
     // create snapshot database tables
-    $this->executeSqlFile('sql/donrec.sql', true); 
+    $this->executeSqlFile('sql/donrec.sql', true);
 
     // create/update custom groups
     CRM_Donrec_DataStructure::update();
@@ -54,7 +54,7 @@ class CRM_Donrec_Upgrader extends CRM_Donrec_Upgrader_Base {
    */
   public function disable() {
     // delete the snapshot-table
-    $this->executeSqlFile('sql/donrec_uninstall.sql', true); 
+    $this->executeSqlFile('sql/donrec_uninstall.sql', true);
   }
 
   /**
@@ -73,27 +73,21 @@ class CRM_Donrec_Upgrader extends CRM_Donrec_Upgrader_Base {
 
     // STEP 1: Migrate old general settings to prefixed ones
     $settings_migration = array(
-      'default_profile'  => 'donrec_default_profile',
-      'packet_size'      => 'donrec_packet_size',
-      'pdfinfo_path'     => 'donrec_pdfinfo_path',
-      );
+        'default_profile' => 'donrec_default_profile',
+        'packet_size'     => 'donrec_packet_size',
+        'pdfinfo_path'    => 'donrec_pdfinfo_path',
+    );
 
-    $migrated_values = array();
     foreach ($settings_migration as $old_key => $new_key) {
       $new_value = CRM_Core_BAO_Setting::getItem($OLD_SETTINGS_GROUP, $new_key);
       if ($new_value === NULL) {
         $old_value = CRM_Core_BAO_Setting::getItem($OLD_SETTINGS_GROUP, $old_key);
         if ($old_value !== NULL) {
-          $migrated_values[$new_key] = $old_value;
+          CRM_Core_BAO_Setting::setItem($old_value, $OLD_SETTINGS_GROUP, $new_key);
         }
       }
     }
 
-    if (!empty($migrated_values)) {
-      civicrm_api3('Setting', 'create', $migrated_values);
-    }
-
-    
     // Migrate profiles 
     //  (only works on 4.6. With 4.7 the group_name was dropped, and we cannot find the profiles any more)
     $existing_profiles = civicrm_api3('Setting', 'getvalue', array('name' => 'donrec_profiles'));
@@ -141,4 +135,16 @@ class CRM_Donrec_Upgrader extends CRM_Donrec_Upgrader_Base {
   }
 
   // TODO: Upgrade for watermark peresets.
+
+  /**
+   * Upgrade to 1.5:
+   *  - forms have changed, so rebuild menu
+   *
+   * @return TRUE on success
+   * @throws Exception
+   */
+  public function upgrade_0150() {
+    CRM_Core_Invoke::rebuildMenuAndCaches();
+    return TRUE;
+  }
 }
