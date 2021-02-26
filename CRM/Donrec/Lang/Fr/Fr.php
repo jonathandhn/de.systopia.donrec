@@ -60,7 +60,7 @@ class CRM_Donrec_Lang_Fr_Fr extends  CRM_Donrec_Lang {
     'QUARANTE ',
     'CINQUANTE ',
     'SOIXANTE ',
-    'SOIXANTE',
+    'SOIXANTE ',
     'QUATRE - VINGT ',
     'QUATRE - VINGT ',
     'CENT '
@@ -226,10 +226,10 @@ class CRM_Donrec_Lang_Fr_Fr extends  CRM_Donrec_Lang {
 
     if (intval($cientos) > 0) {
       if ($cientos == '001') {
-        $converted .= 'UN ';
+        $converted .= '';
       }
       elseif (intval($cientos) > 0) {
-        $converted .= sprintf('%s ', self::convertGroup($cientos));
+        $converted .= sprintf( '%s ', self::convertGroup($cientos));
       }
     }
 
