@@ -30,7 +30,7 @@ abstract class CRM_Donrec_Lang {
    */
   public static function getLanguageList() {
     // TODO: scan the include path for 'CRM/Donrec/XX/XX' files
-    $locale_list = ['en_US', 'de_DE', 'de_XX', 'es_ES', 'pl_PL'];
+    $locale_list = ['en_US', 'de_DE', 'de_XX', 'es_ES', 'pl_PL', 'fr_FR'];
 
     $language_list = [];
     foreach ($locale_list as $locale) {
