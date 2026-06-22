@@ -8,6 +8,8 @@
 | License: AGPLv3, see LICENSE file                      |
 +--------------------------------------------------------*/
 
+declare(strict_types=1);
+
 use CRM_Donrec_ExtensionUtil as E;
 
 /**
@@ -21,7 +23,7 @@ class CRM_Donrec_Lang_Fr_Fr extends CRM_Donrec_Lang {
    * @return string
    */
   public function getName() {
-    return E::ts("Français (France)");
+    return E::ts('Français (France)');
   }
 
   /**
@@ -51,19 +53,21 @@ class CRM_Donrec_Lang_Fr_Fr extends CRM_Donrec_Lang {
    * @return string|false
    */
   public static function amountToFrenchWords($amount, $currency = 'EUR', $params = []) {
+    // phpcs:disable Generic.Metrics.CyclomaticComplexity.TooHigh
+
     // Donrec currently supports EUR only. Do not silently label an amount in
     // another currency as euros.
     if (strtoupper(trim((string) $currency)) !== 'EUR') {
-      return false;
+      return FALSE;
     }
 
-    if ($amount === null || $amount === '') {
-      return false;
+    if ($amount === NULL || $amount === '') {
+      return FALSE;
     }
 
     $normalized = self::normalizeNumericInput($amount);
-    if ($normalized === false) {
-      return false;
+    if ($normalized === FALSE) {
+      return FALSE;
     }
 
     $value = round((float) $normalized, 2);
@@ -78,7 +82,7 @@ class CRM_Donrec_Lang_Fr_Fr extends CRM_Donrec_Lang {
     }
 
     if (!class_exists('NumberFormatter')) {
-      return false;
+      return FALSE;
     }
 
     $formatter = new NumberFormatter('fr_FR', NumberFormatter::SPELLOUT);
@@ -124,15 +128,15 @@ class CRM_Donrec_Lang_Fr_Fr extends CRM_Donrec_Lang {
     $value = trim((string) $amount);
 
     if ($value === '') {
-      return false;
+      return FALSE;
     }
 
     // Remove normal spaces and non-breaking spaces
     $value = str_replace(["\xc2\xa0", ' '], '', $value);
 
     // If both comma and dot exist, assume the last separator is decimal
-    $hasComma = strpos($value, ',') !== false;
-    $hasDot = strpos($value, '.') !== false;
+    $hasComma = strpos($value, ',') !== FALSE;
+    $hasDot = strpos($value, '.') !== FALSE;
 
     if ($hasComma && $hasDot) {
       $lastComma = strrpos($value, ',');
@@ -153,7 +157,7 @@ class CRM_Donrec_Lang_Fr_Fr extends CRM_Donrec_Lang {
     }
 
     if (!is_numeric($value)) {
-      return false;
+      return FALSE;
     }
 
     return $value;
@@ -178,4 +182,5 @@ class CRM_Donrec_Lang_Fr_Fr extends CRM_Donrec_Lang {
 
     return $text;
   }
+
 }

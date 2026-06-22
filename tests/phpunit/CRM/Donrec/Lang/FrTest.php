@@ -4,6 +4,8 @@
 | License: AGPLv3, see LICENSE file                      |
 +--------------------------------------------------------*/
 
+declare(strict_types=1);
+
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,14 +26,14 @@ class CRM_Donrec_Lang_FrTest extends TestCase {
   /**
    * @dataProvider amountProvider
    */
-  public function testAmountToFrenchWords($amount, $expected) {
-    $this->assertSame(
+  public function testAmountToFrenchWords(string $amount, string $expected): void {
+    self::assertSame(
       $expected,
       CRM_Donrec_Lang_Fr_Fr::amountToFrenchWords($amount, 'EUR')
     );
   }
 
-  public static function amountProvider() {
+  public static function amountProvider(): array {
     return [
       'zero' => ['0', 'zéro euro'],
       'one euro' => ['1', 'un euro'],
@@ -48,13 +50,13 @@ class CRM_Donrec_Lang_FrTest extends TestCase {
   /**
    * @dataProvider invalidAmountProvider
    */
-  public function testInvalidAmountIsRejected($amount) {
-    $this->assertFalse(
+  public function testInvalidAmountIsRejected(mixed $amount): void {
+    self::assertFalse(
       CRM_Donrec_Lang_Fr_Fr::amountToFrenchWords($amount, 'EUR')
     );
   }
 
-  public static function invalidAmountProvider() {
+  public static function invalidAmountProvider(): array {
     return [
       'null' => [NULL],
       'empty string' => [''],
@@ -62,14 +64,14 @@ class CRM_Donrec_Lang_FrTest extends TestCase {
     ];
   }
 
-  public function testUnsupportedCurrencyIsRejected() {
-    $this->assertFalse(
+  public function testUnsupportedCurrencyIsRejected(): void {
+    self::assertFalse(
       CRM_Donrec_Lang_Fr_Fr::amountToFrenchWords('40.00', 'USD')
     );
   }
 
-  public function testCurrencyCodeIsCaseInsensitive() {
-    $this->assertSame(
+  public function testCurrencyCodeIsCaseInsensitive(): void {
+    self::assertSame(
       'quarante euros',
       CRM_Donrec_Lang_Fr_Fr::amountToFrenchWords('40.00', 'eur')
     );
