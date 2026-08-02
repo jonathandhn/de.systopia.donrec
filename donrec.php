@@ -28,6 +28,7 @@ function donrec_civicrm_config(\CRM_Core_Config $config): void {
  */
 function donrec_civicrm_install(): void {
   _donrec_civix_civicrm_install();
+  _donrec_civicrm_normalize_custom_group_table_names();
 }
 
 /**
@@ -35,6 +36,163 @@ function donrec_civicrm_install(): void {
  */
 function donrec_civicrm_enable(): void {
   _donrec_civix_civicrm_enable();
+  _donrec_civicrm_normalize_custom_group_table_names();
+}
+
+/**
+ * Implements hook_civicrm_disable().
+ */
+function donrec_civicrm_disable(): void {
+  _donrec_civicrm_normalize_custom_group_table_names();
+  _donrec_civix_civicrm_disable();
+}
+
+/**
+ * Normalize Donrec custom group table names after install/enable/disable.
+ *
+ * This is a one-time compatibility shim for clean installs where CiviCRM
+ * derives table names from translated titles instead of stable technical names.
+ */
+function _donrec_civicrm_normalize_custom_group_table_names(): void {
+  $customGroups = [
+    'zwb_donation_receipt' => 'civicrm_value_donation_receipt',
+    'zwb_donation_receipt_item' => 'civicrm_value_donation_receipt_item',
+  ];
+
+  foreach ($customGroups as $groupName => $tableNamePrefix) {
+    _donrec_civicrm_normalize_custom_group_table_name($groupName, $tableNamePrefix);
+  }
+}
+
+/**
+ * Rename the managed custom group table to the expected deterministic name.
+ */
+function _donrec_civicrm_normalize_custom_group_table_name(string $groupName, string $tableNamePrefix): void {
+  $customGroup = _donrec_civicrm_get_custom_group_for_normalization($groupName);
+  if ($customGroup === NULL) {
+    return;
+  }
+
+  $currentTableName = $customGroup['table_name'] ?? NULL;
+  if (!is_string($currentTableName) || $currentTableName === '') {
+    return;
+  }
+
+  $customGroupId = $customGroup['id'];
+  if ($customGroupId <= 0) {
+    return;
+  }
+
+  $expectedTableName = $tableNamePrefix . '_' . $customGroupId;
+  if ($currentTableName === $expectedTableName) {
+    return;
+  }
+
+  if (preg_match('/^[A-Za-z0-9_]+$/', $currentTableName) !== 1
+    || preg_match('/^[A-Za-z0-9_]+$/', $expectedTableName) !== 1
+  ) {
+    Civi::log()->warning("Unsafe Donrec custom table name format for {$groupName}.");
+    return;
+  }
+
+  $currentTableExists = _donrec_civicrm_table_exists($currentTableName);
+  $expectedTableExists = _donrec_civicrm_table_exists($expectedTableName);
+
+  _donrec_civicrm_apply_custom_group_table_name(
+    $groupName,
+    $customGroupId,
+    $currentTableName,
+    $expectedTableName,
+    $currentTableExists,
+    $expectedTableExists
+  );
+}
+
+/**
+ * Look up a custom group that may need install-time table normalization.
+ *
+ * @return array{id: int, table_name: string}|null
+ */
+function _donrec_civicrm_get_custom_group_for_normalization(string $groupName): ?array {
+  try {
+    $customGroup = civicrm_api3('CustomGroup', 'getsingle', [
+      'name' => $groupName,
+    ]);
+  }
+  catch (Exception $exception) {
+    // @ignoreException
+    return NULL;
+  }
+
+  if (!is_array($customGroup) || !isset($customGroup['id'], $customGroup['table_name'])) {
+    return NULL;
+  }
+
+  if (!is_numeric($customGroup['id']) || (int) $customGroup['id'] <= 0 || !is_string($customGroup['table_name'])) {
+    return NULL;
+  }
+
+  return [
+    'id' => (int) $customGroup['id'],
+    'table_name' => $customGroup['table_name'],
+  ];
+}
+
+/**
+ * Check whether the given table exists.
+ */
+function _donrec_civicrm_table_exists(string $tableName): bool {
+  return CRM_Core_DAO::checkTableExists($tableName) !== FALSE;
+}
+
+/**
+ * Apply the table rename or metadata update based on the detected table state.
+ */
+function _donrec_civicrm_apply_custom_group_table_name(
+  string $groupName,
+  int $customGroupId,
+  string $currentTableName,
+  string $expectedTableName,
+  bool $currentTableExists,
+  bool $expectedTableExists
+): void {
+  if (!$currentTableExists && $expectedTableExists) {
+    CRM_Core_DAO::executeQuery(
+      'UPDATE `civicrm_custom_group` SET `table_name` = %1 WHERE `id` = %2',
+      [
+        1 => [$expectedTableName, 'String'],
+        2 => [$customGroupId, 'Integer'],
+      ]
+    );
+    return;
+  }
+
+  if ($currentTableExists && !$expectedTableExists) {
+    $escapedCurrent = CRM_Core_DAO::escapeString($currentTableName);
+    $escapedExpected = CRM_Core_DAO::escapeString($expectedTableName);
+    CRM_Core_DAO::executeQuery("RENAME TABLE `{$escapedCurrent}` TO `{$escapedExpected}`");
+    CRM_Core_DAO::executeQuery(
+      'UPDATE `civicrm_custom_group` SET `table_name` = %1 WHERE `id` = %2',
+      [
+        1 => [$expectedTableName, 'String'],
+        2 => [$customGroupId, 'Integer'],
+      ]
+    );
+    return;
+  }
+
+  if ($currentTableExists && $expectedTableExists) {
+    Civi::log()->warning("Both Donrec custom tables exist for {$groupName}: {$currentTableName} and {$expectedTableName}.");
+    return;
+  }
+
+  CRM_Core_DAO::executeQuery(
+    'UPDATE `civicrm_custom_group` SET `table_name` = %1 WHERE `id` = %2',
+    [
+      1 => [$expectedTableName, 'String'],
+      2 => [$customGroupId, 'Integer'],
+    ]
+  );
 }
 
 /**
